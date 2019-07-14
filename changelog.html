@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title></title>
+
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/font-awesome.min.css">
+        <link rel="stylesheet" href="/css/highlight.dark.css">
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <body>
+
+        <header class="navbar navbar-default navbar-fixed-top">
+
+            <a class="navbar-brand" href="/">
+                The title
+                <small class="hidden-xs hidden-sm">
+                    This is the default subtitle!
+                </small>
+            </a>
+
+            
+        </header>
+
+        <main class="container">
+            <div class="row">
+
+                
+                <section id="content" class="col-sm-12">
+                    <h1 id="changelog">CHANGELOG</h1>
+<h2 id="v170-2019-07-14">v1.7.0 (2019-07-14)</h2>
+<ul>
+<li>[BREAKING] Oxygen IDE requires now Chrome Oxygen Extension v0.64.0 or later.</li>
+<li>Fixed an issue with Run button being disabled when recording stopped abruptly.</li>
+<li>Fixed an issue with externally removed files remaining in the IDE in unusable state.</li>
+<li>Fixed issue when recording into temporary files.</li>
+<li>Highlight currently active file used for recording.</li>
+<li>Highlight 'Continue' button when reaching a breakpoint.</li>
+<li>Don't show error if automatic update check has failed.</li>
+<li>Fixed number of issues with breakpoints and run marker.</li>
+<li>Add support for Sauce Labs provider.</li>
+<li>Add support for monitoring of iOS devices.</li>
+<li>Bump Oxygen 0.46.4.</li>
+</ul>
+<h2 id="v160-2019-06-21">v1.6.0 (2019-06-21)</h2>
+<ul>
+<li>Fixed saving recording in a wrong file format deletes the script.</li>
+<li>Fixed increasing font size does not increase green arrow &amp; red break point.</li>
+<li>Fixed crash when working in offline mode.</li>
+<li>Fixed run marker not disappearing when test completes successfully.</li>
+<li>Bump IEDriverServer 1.141.59.</li>
+<li>Bump Oxygen 0.45.1.</li>
+</ul>
+<h2 id="v151-2019-05-29">v1.5.1 (2019-05-29)</h2>
+<ul>
+<li>Bump Oxygen 0.44.0.</li>
+<li>Fixed <code>log</code> commands not working.</li>
+<li>Fixed empty files being incorectly saved.</li>
+<li>Fixed saving newly created files not working in OS X.</li>
+<li>Fixed test execution not working on OS X and Linux.</li>
+<li>Fixed IDE crash when opened folder is located on a network drive.</li>
+<li>Other fixes &amp; improvements.</li>
+</ul>
+<h2 id="v150-2019-05-20">v1.5.0 (2019-05-20)</h2>
+<ul>
+<li>Bump Oxygen 0.42.8.</li>
+<li>Better synchronization for files and directories modified outside the IDE.</li>
+<li>Landing screen.</li>
+<li>UIX improvements to the recording process.</li>
+<li>Reworked file creation process.</li>
+<li>Preserve unsaved changes across IDE restarts.</li>
+<li>Check for Java installation.</li>
+<li>MSI installer improvements.</li>
+<li>Anonymous analytics.</li>
+<li>Other fixes &amp; improvements.</li>
+</ul>
+<h2 id="v140-2019-03-04">v1.4.0 (2019-03-04)</h2>
+<ul>
+<li>Bump Oxygen 0.42.0.</li>
+<li>Bump Geckodriver 0.24.0.</li>
+<li>Bump IEDriverServer 1.141.5.</li>
+<li>Bump Chromedriver 2.46.0.</li>
+<li>Allow to set and pause on breakpoints in module files (called by require from the main script).</li>
+<li>Add more user hints for some script execution errors.</li>
+<li>Add button for copying general/selenium log content to clipboard.</li>
+<li>Automatically synchronize file hierarchy and content when files are modified outside of the IDE.</li>
+<li>Add 'go professional' menu entry.</li>
+<li>Prevent script editing during execution.</li>
+<li>Don't allow creating folders files with illegal characters in their names.</li>
+<li>Add option to change editor's font size.</li>
+<li>Add support for drag-and-drop inside the file tree.</li>
+<li>Changed 'modified' tab icon.</li>
+<li>Update recorder certificates.</li>
+<li>Print more error details on 'Test Failed' errors.</li>
+<li>Show message about unsaved file as a warning instead of error.</li>
+<li>Improve welcome message.</li>
+<li>Fix selenium process getting killed when opening two instances of the IDE.</li>
+<li>Fix crash in create file dialog when filename is not specified.</li>
+<li>Fix general log scrolling issues.</li>
+<li>Fix tab scroller appearing in the middle of the tabs and not in the bottom of the tabs.</li>
+</ul>
+<h2 id="v131-2019-01-03">v1.3.1 (2019-01-03)</h2>
+<ul>
+<li>Bump Oxygen 0.39.0.</li>
+<li>Colorize transaction commands.</li>
+<li>Fix active line not always pointing to the correct line on bp events.</li>
+<li>Fix breakpoints disappearing in certain situations.</li>
+<li>Fix method descriptions in intellisense suggestions.</li>
+<li>Show formated text in logs.</li>
+</ul>
+<h2 id="v130-2018-12-23">v1.3.0 (2018-12-23)</h2>
+<ul>
+<li>Bump Oxygen 0.38.0.</li>
+<li>Bump ChromeDriver 2.45.</li>
+<li>Bump IEDriverServer 3.141.0.</li>
+<li>Fix IDE not responding when opened folder gets deleted outside of the IDE.</li>
+<li>Write proper status to log when test is canceled.</li>
+<li>Display notification messages slightly below the toolbar.</li>
+<li>Fix breakpoint markers disappearing in certain situations.</li>
+<li>Fix crash when running multiple iterations with breakpoints.</li>
+</ul>
+<h2 id="v120-2018-12-02">v1.2.0 (2018-12-02)</h2>
+<ul>
+<li>...</li>
+</ul>
+<h2 id="v110-2018-11-20">v1.1.0 (2018-11-20)</h2>
+<ul>
+<li>...</li>
+</ul>
+<h2 id="v100-2018-11-15">v1.0.0 (2018-11-15)</h2>
+<ul>
+<li>Initial next-gen release. Everything is new!</li>
+</ul>
+                </section>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p class="text-muted">
+                    website generated with <a href="http://couscous.io" title="Markdown website generator">Couscous</a>
+                </p>
+            </div>
+        </footer>
+
+        <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script src="//yastatic.net/highlightjs/8.2/highlight.min.js"></script>
+
+        <script>
+            $(function() {
+                $("section>h1").wrap('<div class="page-header" />');
+                // Syntax highlighting
+                hljs.initHighlightingOnLoad();
+            });
+        </script>
+
+    </body>
+</html>

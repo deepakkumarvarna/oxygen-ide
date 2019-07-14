@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title></title>
+
+        <link rel="stylesheet" href="/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/css/font-awesome.min.css">
+        <link rel="stylesheet" href="/css/highlight.dark.css">
+        <link rel="stylesheet" href="/css/main.css">
+    </head>
+    <body>
+
+        <header class="navbar navbar-default navbar-fixed-top">
+
+            <a class="navbar-brand" href="/">
+                The title
+                <small class="hidden-xs hidden-sm">
+                    This is the default subtitle!
+                </small>
+            </a>
+
+            
+        </header>
+
+        <main class="container">
+            <div class="row">
+
+                
+                <section id="content" class="col-sm-12">
+                    <h1 id="oxygen-ide">Oxygen IDE</h1>
+<h2 id="building">Building:</h2>
+<ol>
+<li><code>npm install -g grunt-cli</code></li>
+<li><code>npm install</code></li>
+<li><code>npm run dev</code> to start in development mode or <code>npm run start</code> in production mode.</li>
+<li><code>npm run package</code> to generate the release package.</li>
+</ol>
+<h2 id="os-specific-requirements-for-building">OS Specific requirements for building:</h2>
+<h4 id="windows">Windows:</h4>
+<ul>
+<li>WiX Toolset installed and added to the %PATH%. </li>
+<li><code>npm --add-python-to-path='true' --debug install --global windows-build-tools</code> from <code>cmd</code> with admin rights.</li>
+<li>[Optional.  Required for DB support] Windows SDK</li>
+</ul>
+<h4 id="linux">Linux</h4>
+<ul>
+<li>[Optional.  Required for DB support] unixodbc binaries and development libraries:<br />
+Debian/Ubuntu - <code>sudo apt-get install unixodbc unixodbc-dev</code><br />
+RedHat/CentOS - <code>sudo dnf install unixODBC unixODBC-devel</code></li>
+</ul>
+<h4 id="os-x">OS X</h4>
+<ul>
+<li>[Optional.  Required for DB support] unixodbc binaries and development libraries: <code>brew install unixodbc</code></li>
+</ul>
+                </section>
+
+            </div>
+        </main>
+
+        <footer>
+            <div class="container">
+                <p class="text-muted">
+                    website generated with <a href="http://couscous.io" title="Markdown website generator">Couscous</a>
+                </p>
+            </div>
+        </footer>
+
+        <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script src="//yastatic.net/highlightjs/8.2/highlight.min.js"></script>
+
+        <script>
+            $(function() {
+                $("section>h1").wrap('<div class="page-header" />');
+                // Syntax highlighting
+                hljs.initHighlightingOnLoad();
+            });
+        </script>
+
+    </body>
+</html>
