@@ -12,10 +12,7 @@ var path = require('path');
 
 module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-contrib-compress');
     grunt.loadNpmTasks('grunt-chmod');
-    grunt.loadNpmTasks('grunt-stripcomments');
 
     grunt.loadTasks('./tools/grunt-tasks');
 
@@ -38,10 +35,10 @@ module.exports = function(grunt) {
         defaultTasks.push('chmod:geckodriver');
         defaultTasks.push('chmod:oxygendarwin');
     } else if (process.platform === 'win32') {
-        //ignore
+        defaultTasks.push('copy:win');
     }
+    defaultTasks.push('asar'); 
     defaultTasks.push('rebrand');
-    defaultTasks.push('sentry-browser');
 
     if (process.platform === 'linux') {
         defaultTasks.push('compress:linux');
@@ -53,8 +50,7 @@ module.exports = function(grunt) {
 
     grunt.registerTask('default', defaultTasks);
 
-    grunt.registerTask('chrome-ext', ['clean:chrome-ext', 'copy:chrome-ext', 'concat-files', 'comments:chrome-ext']);
-    grunt.registerTask('sentry-browser', ['copy:sentry-browser']);
+    grunt.registerTask('chrome-ext', ['clean:chrome-ext', 'copy:chrome-ext', 'concat-files', 'strip-comments:chrome-ext']);
 
     const OUTDIR = 'dist/temp';
     const RESOURCES = process.platform === 'darwin' ? '/Electron.app/Contents/Resources' : '/resources';
@@ -67,24 +63,24 @@ module.exports = function(grunt) {
     // get production dependencies. instead of using '**' we get the actual deps list
     // because ** and tons of ingores (from modclean task) don't play along nicely
     var prodDeps = [];
-    try {
-        var cwd = process.cwd();
-        process.chdir('app');
-        cp.execSync('npm i @wdio/cli@5.16.9');
-        var out = cp.execSync('npm ls --prod=true --parseable');
-        var prodDepsUnfiltered = out.toString().split(/\r?\n/);
-        var si = __dirname.length + 1 + 'app'.length + 1 + 'node_modules'.length + 1;
-        for (var i = 0; i < prodDepsUnfiltered.length; i++) {
-            var dep = prodDepsUnfiltered[i].substring(si);
-            if (dep === '' || dep.indexOf('node_modules') > 0) {
-                continue;
+    if (!grunt.cli.tasks.includes('chrome-ext')) {
+        try {
+            var cwd = process.cwd();
+            process.chdir('app');
+            var out = cp.execSync('npm ls --prod=true --parseable');
+            var prodDepsUnfiltered = out.toString().split(/\r?\n/);
+            var si = __dirname.length + 1 + 'app'.length + 1 + 'node_modules'.length + 1;
+            for (var i = 0; i < prodDepsUnfiltered.length; i++) {
+                var dep = prodDepsUnfiltered[i].substring(si);
+                if (dep === '' || dep.indexOf('node_modules') > 0) {
+                    continue;
+                }
+                prodDeps.push(dep + '/**');
             }
-            prodDeps.push(dep + '/**');
+            process.chdir(cwd);
+        } catch (e) {
+            grunt.fail.fatal('Unable to get production dependencies list', e);
         }
-        cp.execSync('npm uninstall @wdio/cli');
-        process.chdir(cwd);
-    } catch (e) {
-        grunt.fail.fatal('Unable to get production dependencies list', e);
     }
 
     grunt.initConfig({
@@ -92,6 +88,12 @@ module.exports = function(grunt) {
             name: pkg.name,
             version: pkg.version,
             dist: OUTDIR,
+        },
+        asar: {
+            src: OUTDIR + RESOURCES + '/app',
+            dest: OUTDIR + RESOURCES + '/app.asar',
+            unpack: '*.node',
+            'unpack-dir': '{main/selenium,main/services/Win32FileService}'
         },
         'config-patch': {
             dist: OUTDIR
@@ -113,15 +115,8 @@ module.exports = function(grunt) {
                 RECORDER + 'engineXpath.js'],
             dest: [CHROME_EXT_DIST + 'recorder.js']
         },
-        comments: {
-            'chrome-ext': {
-                options: {
-                    singleline: true,
-                    multiline: true,
-                    keepSpecialComments: false
-                },
-                src: [CHROME_EXT_DIST + 'recorder.js']
-            }
+        'strip-comments': {
+            'chrome-ext': CHROME_EXT_DIST + '*.js'
         },
         copy: {
             main: {
@@ -129,18 +124,16 @@ module.exports = function(grunt) {
                     { 
                         expand: true, 
                         cwd: 'app/node_modules', src: prodDeps.concat(['!fibers/src/**',
-                            '!oxygen-cli/lib/reporters/pdf/**',
-                            '!oxygen-cli/lib/reporters/html/**',
+                            '!oxygen-cli/build/ox_reporters/pdf/**',
+                            '!oxygen-cli/build/ox_reporters/html/**',
                             '!**/obj/**',
                             '!monaco-editor/dev/**',
                             '!monaco-editor/esm/**',
                             '!codepage/bits/**',
                             '!moment/src/**',
-                            '!node-idevice/apps/TestApp.ipa',
-                            '!appium-ios-driver/instruments-iwd/iwd4/**',
-                            '!appium-ios-driver/instruments-iwd/iwd5/**',
-                            '!appium-ios-driver/instruments-iwd/iwd6/**',
-                            '!intl/locale-data/jsonp/**']),
+                            '!intl/locale-data/jsonp/**',
+                            '!chromedriver/**',
+                            '!geckodriver/**']),
                         dest: OUTDIR + RESOURCES + '/app/node_modules' 
                     },
                     { 
@@ -158,6 +151,23 @@ module.exports = function(grunt) {
                             'main/services/require.js',
                             'package.json'],
                         dest: OUTDIR + RESOURCES + '/app' 
+                    },
+                    { 
+                        expand: true, 
+                        cwd: SENTRY_BROWSER_SRC, src: ['**'], 
+                        dest: SENTRY_BROWSER_DIST
+                    },
+                    { 
+                        expand: true, 
+                        cwd: '',
+                        src: ['package.json'], 
+                        dest: OUTDIR + RESOURCES
+                    },
+                    { 
+                        expand: true, 
+                        cwd: 'app',
+                        src: ['renderer/components/MonacoEditor/cucumber/feature.tmLanguage'], 
+                        dest: OUTDIR + RESOURCES + '/app'
                     }
                 ]
             },
@@ -179,21 +189,22 @@ module.exports = function(grunt) {
                     }
                 ]
             },
+            win: {
+                files: [
+                    { 
+                        expand: true, 
+                        cwd: 'app',
+                        src: ['main/services/Win32FileService/CodeHelper.exe'], 
+                        dest: OUTDIR + RESOURCES + '/app'
+                    }
+                ]
+            },
             'chrome-ext': {
                 files: [
                     { 
                         expand: true, 
                         cwd: CHROME_EXT_SRC, src: ['**'], 
                         dest: CHROME_EXT_DIST
-                    }
-                ]
-            },
-            'sentry-browser': {
-                files: [
-                    { 
-                        expand: true, 
-                        cwd: SENTRY_BROWSER_SRC, src: ['**'], 
-                        dest: SENTRY_BROWSER_DIST
                     }
                 ]
             }
@@ -213,22 +224,13 @@ module.exports = function(grunt) {
                     OUTDIR + RESOURCES + '/app/main/selenium/darwin/geckodriver']
             },
             oxygendarwin: {
-                src: [OUTDIR + RESOURCES + '/../MacOS/Electron']
+                src: [OUTDIR + RESOURCES + '/../MacOS/Electron', OUTDIR + RESOURCES + '/app/node_modules/term-size/vendor/macos/term-size']
             }
         },
         compress: {
             linux: {
-                options: {
-                    archive: 'dist/oxygen-' + pkg.version + '-linux-x64.zip',
-                    level: 9
-                },
-                files: [
-                    { 
-                        expand: true, 
-                        cwd: OUTDIR, src: ['**'], 
-                        dest: 'oxygen-' + pkg.version + '-linux-x64'
-                    }
-                ]
+                src: OUTDIR,
+                dest: path.join(__dirname, 'dist', 'oxygen-' + pkg.version + '-linux-x64.zip')
             }
         },
         'installer-dmg': {

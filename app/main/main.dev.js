@@ -17,7 +17,6 @@
  *
  * @flow
  */
-
 import { app, BrowserWindow, globalShortcut, crashReporter } from 'electron';
 
 import Logger from './Logger';
@@ -25,23 +24,12 @@ import MainProcess from './MainProcess';
 import * as Sentry from '@sentry/electron';
 import fs from 'fs';
 import path from 'path';
+import packageJson from '../../package.json';
 
-try {
-    if (
-        typeof process !== 'undefined' && 
-    process && 
-    process.env && 
-    process.env.NODE_ENV && 
-    process.env.NODE_ENV === 'development'
-    ) {
-    // dev mode
-    // ignore sentry logging
-        initializeCrashReporterAndSentry();
-    } else {
-        initializeCrashReporterAndSentry();
-    }
-} catch(e){
-    console.warn('Cannot initialize CrashReporter and Sentry', e);
+console.log('Version: ', packageJson.version);
+
+if (process && process.env && process.env.NODE_ENV !== 'development') {
+    initializeCrashReporterAndSentry();
 }
 global.log = new Logger('debug', 'info');
 
@@ -77,24 +65,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true') {
+    const sourceMapSupport = require('source-map-support');
+    sourceMapSupport.install();
     require('electron-debug')();
     const p = path.join(__dirname, 'node_modules');
     require('module').globalPaths.push(p);
 }
-
-// const installExtensions = async () => {
-//     const installer = require('electron-devtools-installer');
-//     const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-//     const extensions = [
-//         'REACT_DEVELOPER_TOOLS',
-//         'REDUX_DEVTOOLS'
-//     ];
-
-//     return Promise
-//         .all(extensions.map(name => installer.default(installer[name], forceDownload)))
-//         .catch(console.log);
-// };
-
 
 /**
  * Add event listeners...
@@ -103,19 +79,10 @@ if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true')
 app.on('window-all-closed', () => {
     // Respect the OSX convention of having the application in memory even
     // after all windows have been closed
-    //if (process.platform !== 'darwin') {
     disposeMainAndQuit(); 
-    //}
 });
 
 app.on('ready', async () => {
-    /*
-  if (
-    process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
-  ) {
-    await installExtensions();
-  }
-  */
     mainWindow = new BrowserWindow({
         show: false,
         width: 1024,
@@ -125,40 +92,55 @@ app.on('ready', async () => {
         },
     });
 
-    // Prevent refresh
-    // @FIXME: it'll cause preventing refreshesh for all windows
-    // https://stackoverflow.com/questions/51187602/electron-js-prevent-refresh-for-created-window
-    globalShortcut.register('CommandOrControl+R', () => false);
-    globalShortcut.register('F5', () => false);
-    mainWindow.loadURL(`file://${__dirname}/../renderer/app.html`);
-
-    // @TODO: Use 'ready-to-show' event
-    // https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
-    mainWindow.webContents.on('did-finish-load', () => {
-        if (!mainWindow) {
-            throw new Error('"mainWindow" is not defined');
-        }
-        mainWindow.show();
-        mainWindow.focus();
-    });
-
-    mainWindow.on('closed', () => {
-        disposeMainAndQuit();
-    });
-
-    try{
-        mainProc = new MainProcess(mainWindow);
-    } catch(e){
+    if(mainWindow){
+        // Prevent refresh
+        // @FIXME: it'll cause preventing refreshesh for all windows
+        // https://stackoverflow.com/questions/51187602/electron-js-prevent-refresh-for-created-window
+        globalShortcut.register('CommandOrControl+R', () => false);
+        globalShortcut.register('F5', () => false);
+        mainWindow.loadURL(`file://${__dirname}/../renderer/app.html`);
     
-        if(Sentry && Sentry.captureException){
-            Sentry.captureException(e);
-        }
+        mainWindow.webContents.on('did-finish-load', () => {
+            if(mainWindow){
+                mainWindow.show();
+                mainWindow.focus();
+            }
+        });
+
+        mainWindow.webContents.on('destroyed', () => {
+            disposeMainAndQuit();
+        });
     
-        console.log('e', e);
+        mainWindow.on('closed', () => {
+            disposeMainAndQuit();
+        });
+        
+        try{
+            mainProc = new MainProcess(mainWindow);
+        } catch(e){
+        
+            if(Sentry && Sentry.captureException){
+                console.log('LOCATION : mainProc = new MainProcess(mainWindow)');
+                Sentry.captureException(e);
+            }
+        
+            console.log('e', e);
+        }
     }
+
+});
+
+app.on('unresponsive', () => {
+    require('dialog').showMessageBox({
+        type: 'info',
+        message: 'Reload window?',
+        buttons: ['Cancel', 'Reload']
+    });
 });
 
 function disposeMainAndQuit() {
+    mainWindow = null;
+
     if (mainProc) {
         // dispose main process and all its services
         /*eslint-disable */
@@ -170,28 +152,7 @@ function disposeMainAndQuit() {
 }
 
 function initializeCrashReporterAndSentry() {
-    const crashesDirectory = crashReporter.getCrashesDirectory();
-    const completedDirectory = path.join(crashesDirectory, 'completed');
-    const newDirectory = path.join(crashesDirectory, 'new');
-    const pendingDirectory = path.join(crashesDirectory, 'pending');
-    // make sure crashesDirectory and its sub folders exist, otherwise we will get an error while initializing Sentry
-    if (!fs.existsSync(crashesDirectory)){
-        fs.mkdirSync(crashesDirectory);
-    }
-    if (!fs.existsSync(completedDirectory)){
-        fs.mkdirSync(completedDirectory);
-    }
-    if (!fs.existsSync(newDirectory)){
-        fs.mkdirSync(newDirectory);
-    }
-    if (!fs.existsSync(pendingDirectory)){
-        fs.mkdirSync(pendingDirectory);
-    }
-  
-    if (process.env.NODE_ENV === 'development') {
-    // ignore
-    } else {
-    // start CrashReporter
+    try {
         crashReporter.start({
             companyName: 'no-company-nc',
             productName: 'ide',
@@ -199,8 +160,32 @@ function initializeCrashReporterAndSentry() {
             submitURL: 'https://sentry.io/api/1483628/minidump/?sentry_key=cbea024b06984b9ebb56cffce53e4d2f',
             uploadToServer: true
         });
-        // initialize Sentry
-        Sentry.init({dsn: 'https://cbea024b06984b9ebb56cffce53e4d2f@sentry.io/1483893'});
+
+        const crashesDirectory = crashReporter.getCrashesDirectory();
+        const completedDirectory = path.join(crashesDirectory, 'completed');
+        const newDirectory = path.join(crashesDirectory, 'new');
+        const pendingDirectory = path.join(crashesDirectory, 'pending');
+        // make sure crashesDirectory and its sub folders exist, otherwise we will get an error while initializing Sentry
+        if (!fs.existsSync(crashesDirectory)){
+            fs.mkdirSync(crashesDirectory);
+        }
+        if (!fs.existsSync(completedDirectory)){
+            fs.mkdirSync(completedDirectory);
+        }
+        if (!fs.existsSync(newDirectory)){
+            fs.mkdirSync(newDirectory);
+        }
+        if (!fs.existsSync(pendingDirectory)){
+            fs.mkdirSync(pendingDirectory);
+        }
+  
+        const sentryConfig = {
+            dsn: 'https://cbea024b06984b9ebb56cffce53e4d2f@sentry.io/1483893',
+            release: packageJson.version
+        };
+
+        Sentry.init(sentryConfig);
+    } catch(e) {
+        console.warn('Cannot initialize CrashReporter and Sentry', e);
     }
 }
-

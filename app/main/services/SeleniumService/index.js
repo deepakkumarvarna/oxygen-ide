@@ -25,15 +25,17 @@ const selSettings = cfg.selenium;
 // Events
 const ON_SELENIUM_STARTED = 'SELENIUM_STARTED';
 const ON_SELENIUM_STOPPED = 'SELENIUM_STOPPED';
+const ON_CHROME_DRIVER_ERROR = 'ON_CHROME_DRIVER_ERROR';
 
 const CHROMEDRIVER_BASE_URL = 'https://chromedriver.storage.googleapis.com';
 
 export default class SeleniumService extends ServiceBase {
-    seleniumProc = null;
-    availablePort = null;
 
     constructor() {
         super();
+
+        this.seleniumProc = null;
+        this.availablePort = null;
 
         this.downloadChromeDriver = this.downloadChromeDriver.bind(this);
     }
@@ -45,14 +47,14 @@ export default class SeleniumService extends ServiceBase {
     _detectPortAndStart(){
         return detectPort(selSettings.port)
             .then(availablePort => {
-                this._startProcess(availablePort);
+                const seleniumPid = this._startProcess(availablePort);
                 this.availablePort = availablePort;
-                return availablePort;
+                return seleniumPid;
             })
             .catch(err => {
                 const result = 'Unable to start Selenium';
                 console.log(result, err);
-                return result;
+                return null;
             });
     }
 
@@ -140,7 +142,7 @@ export default class SeleniumService extends ServiceBase {
                 result.error = true;
             }
         } catch (e) {
-            console.log('Failure setting up ChromeDriver', e);
+            console.warn('Failure setting up ChromeDriver', e);
             result.error = true;
         }
 
@@ -149,7 +151,12 @@ export default class SeleniumService extends ServiceBase {
 
 
     async _startProcess(port) {
-        const cwd = process.env.NODE_ENV === 'production' ? path.resolve(__dirname, 'selenium') : path.resolve(__dirname, '..', '..', 'selenium');
+        let cwd;
+        if (process.env.NODE_ENV === 'production') {
+            cwd = path.resolve(__dirname, process.env.RELEASE_BUILD ? '../../app.asar.unpacked/main/selenium' : 'selenium');
+        } else {
+            cwd = path.resolve(__dirname, '..', '..', 'selenium');
+        }
 
         await this.copyBundledChromeDrivers(cwd);
 
@@ -177,7 +184,15 @@ export default class SeleniumService extends ServiceBase {
             } else {
                 // if no user placed driver then use, the latest bundled version
                 chromedriver = await this.findLocalChromeDriver(versions[0].driverVersion);
-                console.log('Using latest bundled ChromeDriver from ' + chromedriver);
+                if(chromedriver){
+                    console.log('Using latest bundled ChromeDriver from ' + chromedriver);
+                } else {                    
+                    this.notify({
+                        type: ON_CHROME_DRIVER_ERROR,
+                        chromeVersion: chromeDriverVersion,
+                        chromeDriverVersion: chromedriver,
+                    });
+                }
             }
         }
 
@@ -205,8 +220,17 @@ export default class SeleniumService extends ServiceBase {
 
         console.log('Attempting to start Selenium process with the following args:', selArgs);
         this.seleniumProc = cp.spawn('java', selArgs, { cwd, shell: true });
+
+        let seleniumPid = null;
+
+        if (this.seleniumProc && this.seleniumProc.pid) {
+            seleniumPid = this.seleniumProc.pid;
+        }
+
         this._emitStartedEvent(port);
         this._handleProcessEvents();
+
+        return seleniumPid;
     }
 
     _handleProcessEvents() {
@@ -325,12 +349,15 @@ export default class SeleniumService extends ServiceBase {
                     }
                     return res.buffer();
                 })
-                .then(body => resolve(body))
+                .then(body => {
+                    const version = new Buffer(body,'utf-8').toString();
+                    resolve(version);
+                })
                 .catch(err => reject(err));
         });
     }
 
-    getChromeDriverDownloadUrl = (driverVersion) => {
+    getChromeDriverDownloadUrl(driverVersion){
         var zipFilename;
         switch (process.platform) {
         case 'win32':

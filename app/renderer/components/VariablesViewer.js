@@ -1,16 +1,16 @@
 //@flow
-import React, { PureComponent } from 'react';
+import React from 'react';
 import Tree from '../components/Tree';
 import renderVariablesTreeNodes from './renderVariablesTreeNodes';
 import ScrollContainer from './ScrollContainer.jsx';
-import difference from 'lodash.difference';
+import difference from 'lodash/difference';
 
 type Props = {
     variables: Array | null,
     height: number
 };
 
-export default class VariablesViewer extends PureComponent<Props> {
+export default class VariablesViewer extends React.PureComponent<Props> {
     constructor(props) {
         super(props);
         

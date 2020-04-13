@@ -12,7 +12,6 @@ import ServiceBase from './ServiceBase';
 import moment from 'moment';
 import { version }  from '../../../package.json';
 import os from 'os';
-import osLocale from 'os-locale';
 import uuidv4 from'uuid/v4';
 import * as Sentry from '@sentry/electron';
 
@@ -27,7 +26,7 @@ export default class AnalyticsService extends ServiceBase {
                 this.mixpanel = Mixpanel.init('e80db0ad2789b5718fa1b84b6661f008');
             }
         } catch(e){
-            console.warn('mixpanel e', e);
+            console.warn('Mixpanel error: ', e);
             Sentry.captureException(e);
         }
     }
@@ -76,14 +75,6 @@ export default class AnalyticsService extends ServiceBase {
         let continent_name = 'unknown';
         let continent_code = 'unknown';
         let language = 'unknown';
-        try {
-            const locale = await osLocale.sync();
-            if(locale){
-                language = locale;
-            }
-        } catch(e){
-            console.log('osLocale e', e);
-        }
 
         try{
             const { net } = require('electron');
@@ -120,7 +111,7 @@ export default class AnalyticsService extends ServiceBase {
 
                             try{
                                 if(this.mixpanel && this.mixpanel.people && this.mixpanel.people.set){
-                                    this.mixpanel.people.set(uuid, {
+                                    this.mixpanel.people.set(this.uuid, {
                                         $region: region,
                                         $country_code: country_code,
                                         'Сountry Name': country_name,
@@ -155,7 +146,7 @@ export default class AnalyticsService extends ServiceBase {
         
         try{
             if(this.mixpanel && this.mixpanel.people && this.mixpanel.people.set){
-                this.mixpanel.people.set(uuid, {
+                this.mixpanel.people.set(this.uuid, {
                     $created: (new Date()).toISOString(),
                     $timezone: ''+moment().format('Z'),
                     'IDE Version': version,
@@ -164,6 +155,12 @@ export default class AnalyticsService extends ServiceBase {
                     'Language': language,
                     'Dev': process.env.NODE_ENV === 'development'
                 }); 
+            }
+
+            if (this.mixpanel && this.mixpanel.track) {
+                this.mixpanel.track('NEW_USER', {
+                    distinct_id: this.uuid
+                });
             }
         } catch(e){
             console.warn('mixpanel e', e);
@@ -253,14 +250,16 @@ export default class AnalyticsService extends ServiceBase {
         this.recStartMoment = null;
     }
 
-    playStart(){
+    playStart(data = {}){
+
         this.playStartMoment = moment();
 
         try{
             if(this.mixpanel && this.mixpanel.track){
                 this.mixpanel.track('IDE_FEATURE_PLAY_START', {
                     distinct_id: this.uuid,
-                    'Playback type': 'web'
+                    'Playback type': 'web',
+                    ...data
                 });
             }
         } catch(e){

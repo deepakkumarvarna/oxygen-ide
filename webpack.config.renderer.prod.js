@@ -4,14 +4,14 @@
 
 import path from 'path';
 import webpack from 'webpack';
-import TerserJSPlugin from 'terser-webpack-plugin';
+import TerserPlugin from 'terser-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import OptimizeCSSAssetsPlugin from 'optimize-css-assets-webpack-plugin';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import merge from 'webpack-merge';
-import UglifyJSPlugin from 'uglifyjs-webpack-plugin';
 import baseConfig from './webpack.config.base';
 import CheckNodeEnv from './internals/scripts/CheckNodeEnv';
+import MonacoWebpackPlugin from 'monaco-editor-webpack-plugin';
 
 CheckNodeEnv('production');
 
@@ -20,11 +20,11 @@ export default merge.smart(baseConfig, {
 
     target: 'electron-renderer',
 
-    entry: './app/renderer/index',
+    entry: ['core-js/stable', 'regenerator-runtime/runtime', './app/renderer/index'],
 
     output: {
         path: path.join(__dirname, 'app/dist'),
-        publicPath: '',
+        publicPath: process.env.RELEASE_BUILD ? '../dist/' /*npm run package*/ : '../../app/dist/' /*npm run start*/,
         filename: 'renderer.prod.js'
     },
 
@@ -82,33 +82,43 @@ export default merge.smart(baseConfig, {
             {
                 test: /\.(?:ico|gif|png|jpg|jpeg|webp)$/,
                 use: 'url-loader',
+            },
+            // WASM
+            {
+                test: /\.wasm$/,
+                loader: 'file-loader',
+                type: 'javascript/auto',
             }
         ]
     },
-
     optimization: {
-        minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
+        minimize: true,
+        minimizer: [
+            new TerserPlugin({
+                parallel: true,
+                sourceMap: true,
+                terserOptions: {
+                    ecma: 2016
+                }
+            }),
+            new OptimizeCSSAssetsPlugin({})
+        ]
     },
     plugins: [
         new webpack.DefinePlugin({
             'process.type': '"renderer"'
         }),
         /**
-     * Create global constants which can be configured at compile time.
-     *
-     * Useful for allowing different behaviour between development builds and
-     * release builds
-     *
-     * NODE_ENV should be production so that modules do not perform certain
-     * development checks
-     */
+         * Create global constants which can be configured at compile time.
+         *
+         * Useful for allowing different behaviour between development builds and
+         * release builds
+         *
+         * NODE_ENV should be production so that modules do not perform certain
+         * development checks
+         */
         new webpack.EnvironmentPlugin({
             NODE_ENV: 'production'
-        }),
-
-        new UglifyJSPlugin({
-            parallel: true,
-            sourceMap: true
         }),
 
         new MiniCssExtractPlugin({
@@ -118,6 +128,20 @@ export default merge.smart(baseConfig, {
         new BundleAnalyzerPlugin({
             analyzerMode: process.env.OPEN_ANALYZER === 'true' ? 'server' : 'disabled',
             openAnalyzer: process.env.OPEN_ANALYZER === 'true'
+        }),
+
+        // ignore locale files of moment.js
+        new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
+
+        new MonacoWebpackPlugin({
+            languages: ['javascript', 'typescript', 'json', 'xml'],
+            features: [
+            'accessibilityHelp', 'bracketMatching', 'caretOperations', 'clipboard', 'codeAction', 'comment',
+            'contextmenu', 'coreCommands', 'cursorUndo', 'find', 'folding', 'fontZoom', 'format',
+            'gotoError', 'gotoLine', 'gotoSymbol', 'hover', 'inPlaceReplace', 'linesOperations', 'links',
+            'multicursor', 'parameterHints', 'quickCommand', 'quickOutline', 'referenceSearch', 'rename',
+            'smartSelect', 'snippets', 'suggest', 'toggleHighContrast', 'toggleTabFocusMode', 'transpose',
+            'wordHighlighter', 'wordOperations', 'wordPartOperations']
         })
     ],
 });

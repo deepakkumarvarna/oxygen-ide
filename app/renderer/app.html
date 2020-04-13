@@ -14,53 +14,21 @@
         }
       }());
     </script>
-    <script src="../node_modules/@sentry/browser/build/bundle.min.js"></script>
-    <script>
-      if (process.env.NODE_ENV === 'development') {
-        // ignore
-      } else {
-        try{
-          Sentry.init({dsn: 'https://cbea024b06984b9ebb56cffce53e4d2f@sentry.io/1483893'});
-          window.Sentry = Sentry;
-        } catch(e){
-          console.warn('Sentry Error', e);
-        }
-      }
-    </script>
   </head>
   <body>
     <div id="root"></div>
-    <script>var nodeRequire = global.require;</script>
-    <script src="../node_modules/monaco-editor/min/vs/loader.js"></script>
     <script>
-        // Save Monaco's amd require and restore Node's require
-        var amdRequire = global.require;
-        global.require = nodeRequire;
-    </script>
-    <script>
-      {
-        const scripts = [];
-
-        // Dynamically insert the DLL script in development env in the
-        // renderer process
+        // Dynamically insert the DLL script in development env in the renderer process
         if (process.env.NODE_ENV === 'development') {
-          scripts.push('../../dll/renderer.dev.dll.js');
+          document.write('<script defer src="../../dll/renderer.dev.dll.js"><\/script>');
         }
 
         // Dynamically insert the bundled app script in the renderer process
-        const port = process.env.PORT || 1212;
-        scripts.push(
-          (process.env.HOT)
-            ? 'http://localhost:' + port + '/dist/renderer.dev.js'
-            : '../dist/renderer.prod.js'
-        );
+        var rndr = (process.env.HOT)
+            ? 'http://localhost:' + (process.env.PORT || 1212) + '/dist/renderer.dev.js'
+            : '../dist/renderer.prod.js';
 
-        document.write(
-          scripts
-            .map(script => '<script defer src="' + script + '"><\/script>')
-            .join('')
-        );
-      }
+        document.write('<script defer src="' + rndr + '"><\/script>');
     </script>
   </body>
 </html>

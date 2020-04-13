@@ -1,5 +1,103 @@
 # CHANGELOG
 
+## v1.16.0 (2020-03-15)
+
+#### :tada: New Feature
+* Significantly improved installation speed on Windows and reduced package size for all platforms.
+
+#### :beetle: Bug Fix
+* Number of issues in editor introduced in v1.15.0.
+* No default browser/devices selected when switching between web, mobile, and responsive modes.
+
+#### :house: Internal
+* Bumped oxygen-cli from v1.1.2 to v1.1.3. See [Oxygen ChangeLog](https://github.com/oxygenhq/oxygen/blob/master/CHANGELOG.md).
+
+## v1.15.0 (2020-03-11)
+
+#### :boom: Breaking Change
+* Bumped minimum supported macOS version to 10.10.
+
+#### :beetle: Bug Fix
+* Crash on test end under certain conditions.
+* Processing of CSV files with spaces in the header.
+* SauceLabs test execution not working.
+* Local Appium was used during mobile test execution on cloud providers.
+* If opened folder was renamed outside of the IDE, Open Folder button stopped working.
+* Other small fixes & improvements.
+
+#### :house: Internal
+* Bumped oxygen-cli from v1.0.2 to v1.1.2. See [Oxygen ChangeLog](https://github.com/oxygenhq/oxygen/blob/master/CHANGELOG.md).
+* Updated pre-bundled Chrome drivers.
+* Bumped and cleaned-up dependencies.
+
+#### :studio_microphone: Chrome Extension (v0.72.0)
+* Fixed issue with website hanging under certain conditions when trying to generate CSS selector.
+* Do not pollute website's message event handlers with recorder messages.
+
+## v1.14.1 (2020-02-13)
+
+#### :beetle: Bug Fix
+* Windows version not working properly when project's folder is located on a network drive.
+* Linux related fixes.
+* ChromeDriver update mechanism not working.
+* Invalid video tutorials links in welcome page.
+* IDE sometimes freezing when stopping tests.
+
+#### :house: Internal
+* Bump oxygen-cli from v1.0.1 to v1.0.2. See [Oxygen ChangeLog](https://github.com/oxygenhq/oxygen/blob/master/CHANGELOG.md).
+
+## v1.14.0 (2020-02-06)
+
+#### :tada: New Feature
+* Significant improvements to test structure organization, allowing to define all configurations using a project file.
+* Improvements to the script development flexibility:  
+  - Automation tests can be written using ES6.
+  - Tests can hook into exposed `before` and `after` hooks for `test`, `suite`, `case`, `command` actions.
+* Improvements to Oxygen extendability:  
+  - Internal modules can be written using ES6 and can be developed in both synchronous and asynchronous (using `async/await` operators) manner.  
+  - Modules can contain submodules. E.g. `web.network.assertUrl`.
+  - Added support for Service. Services are add-ons which can be developed for providing additional custom logic for tests.
+* Support for Applitools for visual UI testing.
+* Support for native Windows applications (via WinApiDriver) automation - WinForms, WPF, UWP, Classic Win32.
+* Support for writing tests using Cucumber.
+* Support for environment variables.
+* Project level Page Object support.
+* Support for running multiple Suites as a part of a single test.
+* Improved debugging support when using breakpoints in external files.
+* Added `web.rightClick`.
+* Added `win.rightClick`.
+* Improvements to SauceLabs, LambdaTest, TestingBot integrations.
+* `pdf` methods accept optional argument for reversing string order (useful when working with RTL languages).
+
+#### :boom: Breaking Change
+* `ox.*` is no longer available. `ox.modules.*` should be used instead. All available modules `web`, `mob`, etc are also exposed globally now and can be used directly.
+* `return` is no longer supported for terminating user scripts.
+* Suite configuration JSONs are no longer supported. Project level configuration files should be used instead.
+* `web.network*` commands are now accessible via a submodule `web.network.*` and have different names. See documentation for more details.
+
+#### :beetle: Bug Fix
+* `twilio` not producing proper error when no matching messages found.
+* `web.network` not recording responses for redirected requests.
+* `web.click` not working on IE under certain conditions.
+* Debugger not entering into module code if module name is specified using wrong case.
+* Crash when launching the IDE under certain situations.
+* Relative paths not working in `pdf` module.
+* Folder being duplicated sometimes when creating new folders.
+
+#### :nail_care: Polish
+* Improved error handling. Errors now contain proper stacktraces and provide more details about where in user script the error has occurred.
+* More errors from underlying frameworks are handled and processed.
+* JUnit XML reports improved to include more details about test failures.
+* `twilio` module performance improvements.
+* Added JS injection fall-back for `web.doubleClick` when element is not clickable.
+
+#### :book: Documentation
+* Documentation has been migrated to a new infrastructure providing better user experience. Documentation has been, as well, improved with more topics.
+
+#### :house: Internal
+* Webdriverio updated to v5.18.6.
+* Updated pre-bundled Chrome drivers.
+
 ## v1.12.1 (2019-11-27)
 
 #### :tada: New Feature

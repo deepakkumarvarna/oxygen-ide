@@ -7,7 +7,7 @@
  * (at your option) any later version.
  */
 // @flow
-import React, { Component, Fragment } from 'react';
+import React, { Fragment } from 'react';
 import {Layout, Icon, Row, Col, message, notification } from 'antd';
 /* eslint-disable react/no-did-update-set-state */
 import updateModals from '../../components/updateModals';
@@ -23,7 +23,6 @@ import ObjectContainerCreateDialog from '../../components/dialogs/ObjectContaine
 import UpdateDialog from '../../components/dialogs/UpdateDialog.jsx';
 import SettingsDialog from '../../components/dialogs/SettingsDialog.jsx';
 import NeedInstallExtension from '../../components/dialogs/NeedInstallExtension';
-import CloudProvidersDialog from '../../components/dialogs/CloudProvidersDialog.jsx';
 import ChromeDriverDialog from '../../components/dialogs/ChromeDriverDialog';
 import ChromeDriverDownloadingDialog from '../../components/dialogs/ChromeDriverDownloadingDialog';
 import ChromeDriverDownloadingSuccessDialog from '../../components/dialogs/ChromeDriverDownloadingSuccessDialog';
@@ -66,6 +65,7 @@ type Props = {
   editorActiveFile: object,
   createNewRealFile: Function,
   startTest: Function,
+  startAllTests: Function,
   stopTest: Function,
   continueTest: Function,
   setTestMode: Function,
@@ -92,6 +92,7 @@ type Props = {
   renameFile: Function,
   updateRunSettings: Function,
   updateCloudProvidersSettings: Function,
+  updateVisualTestingSettings: Function,
   startDownloadChromeDriver: Function,
   showDownloadChromeDriverError: Function,
   dialog: Object,
@@ -115,9 +116,9 @@ message.config({
     top: 65
 });
 
-export default class Workbench extends Component<Props> {
+export default class Workbench extends React.Component<Props> {
     constructor(props: Props) {
-        super(props: Props);
+        super(props);
 
         this.on = false;
 
@@ -273,6 +274,9 @@ export default class Workbench extends Component<Props> {
           }
       
       }
+      else if (ctrlId === Controls.TEST_RUN_ALL){
+        this.props.startAllTests();
+      }
       else if (ctrlId === Controls.TEST_STOP) {
           this.props.stopTest();
       }
@@ -290,9 +294,6 @@ export default class Workbench extends Component<Props> {
       }
       else if (ctrlId === Controls.OPEN_FOLDER) {
           this.props.showDialog('OPEN_FOLDER');
-      }
-      else if (ctrlId === Controls.CLOUD_PROVIDER_SETTINGS) {
-          this.props.showDialog('DIALOG_CLOUD_PROVIDERS');
       }
       else if (ctrlId === Controls.SAVE_FILE) {
           this.props.saveCurrentFile();
@@ -346,9 +347,9 @@ export default class Workbench extends Component<Props> {
           [Controls.TEST_RUN]: {
               visible: !test.isRunning,
               enabled: !isRecording && 
-                 !!editorActiveFile && 
-                 editorActiveFile.ext && 
-                 editorActiveFile.ext === '.js' 
+                !!editorActiveFile && 
+                editorActiveFile.ext && 
+                ['.js', '.feature'].includes(editorActiveFile.ext)
           },
           [Controls.TEST_STOP]: {
               visible: test.isRunning,
@@ -360,9 +361,6 @@ export default class Workbench extends Component<Props> {
               selected: isRecording,
           },
           [Controls.TEST_SETTINGS]: {
-              selected: false,
-          },
-          [Controls.CLOUD_PROVIDER_SETTINGS]: {
               selected: false,
           },
       };
@@ -468,20 +466,23 @@ export default class Workbench extends Component<Props> {
       this.props.hideDialog('DIALOG_UPDATE');
   }
   // Settings
-  settingsDialog_onSubmit(settings) {
+  settingsDialog_onSubmit(settings, providers, visualTesting) {
       this.props.hideDialog('DIALOG_SETTINGS');
-      this.props.updateRunSettings(settings);    
+
+      if(settings){
+        this.props.updateRunSettings(settings);    
+      }
+
+      if(providers){
+        this.props.updateCloudProvidersSettings(providers);    
+      }
+
+      if(visualTesting){
+        this.props.updateVisualTestingSettings(visualTesting);
+      }
   }
   settingsDialog_onCancel() {
       this.props.hideDialog('DIALOG_SETTINGS');
-  }
-  // Cloud Providers
-  providersDialog_onSubmit(providers) {
-      this.props.hideDialog('DIALOG_CLOUD_PROVIDERS');
-      this.props.updateCloudProvidersSettings(providers);    
-  }
-  providersDialog_onCancel() {
-      this.props.hideDialog('DIALOG_CLOUD_PROVIDERS');
   }
 
   chromeDrivers_onSubmit = (chromeDriverVersion) => {
@@ -523,7 +524,7 @@ export default class Workbench extends Component<Props> {
           objrepoName
       } = this.props;
 
-      const { cloudProviders = {} } = settings;
+      const { visualProviders = {}, cloudProviders = {}, cloudProvidesBrowsersAndDevices = null } = settings;
       const { runtimeSettings } = test;
       // sidebars state
       const leftSidebarSize = settings.sidebars.left.size;
@@ -547,7 +548,7 @@ export default class Workbench extends Component<Props> {
               });
           }      
       }
-    
+          
       if(!initialized){
           return (
               <Initializing/>
@@ -643,22 +644,20 @@ export default class Workbench extends Component<Props> {
                 onSubmit={ ::this.fileRenameDialog_onSubmit }
                 onCancel={ ::this.fileRenameDialog_onCancel } 
             />
-            <SettingsDialog 
-                { ...dialog['DIALOG_SETTINGS'] } 
-                settings={ runtimeSettings }
-                onSubmit={ ::this.settingsDialog_onSubmit }
-                onCancel={ ::this.settingsDialog_onCancel } 
-            />
+            { dialog.DIALOG_SETTINGS && dialog.DIALOG_SETTINGS.visible &&
+                <SettingsDialog 
+                    { ...dialog['DIALOG_SETTINGS'] } 
+                    settings={ runtimeSettings }
+                    cloudProviders={ cloudProviders }
+                    visualProviders={ visualProviders }
+                    onSubmit={ ::this.settingsDialog_onSubmit }
+                    onCancel={ ::this.settingsDialog_onCancel } 
+                />
+            }
             <UpdateDialog
                 { ...dialog['DIALOG_UPDATE'] }
                 onSubmit={ ::this.updateDialog_onSubmit }
                 onCancel={ ::this.updateDialog_onCancel }
-            />
-            <CloudProvidersDialog
-                { ...dialog['DIALOG_CLOUD_PROVIDERS'] }
-                providers={ cloudProviders }
-                onSubmit={ ::this.providersDialog_onSubmit }
-                onCancel={ ::this.providersDialog_onCancel }
             />
         </Fragment>
               }
@@ -677,6 +676,7 @@ export default class Workbench extends Component<Props> {
                   browsers={ test.browsers }
                   emulators={ test.emulators }
                   providers={ providers }
+                  cloudProvidesBrowsersAndDevices={ cloudProvidesBrowsersAndDevices }
                   showRecorderMessage={ showRecorderMessage }
                   changeShowRecorderMessageValue={ changeShowRecorderMessageValue }
                   controlsState={ this.getToolbarControlsState() } 

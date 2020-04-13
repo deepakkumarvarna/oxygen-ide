@@ -104,6 +104,11 @@ export const startTest = () => ({
     payload: null,
 });
 
+export const startAllTests = () => ({
+    type: ActionTypes.TEST_START_ALL,
+    payload: null,
+});
+
 export const stopTest = () => ({
     type: ActionTypes.TEST_STOP,
     payload: null,
@@ -179,6 +184,21 @@ export const updateBreakpoints = (filePath, breakpoints, fileName) => ({
     payload: { path: filePath, breakpoints, fileName },
 });
 
+export const onDisabledBreakpoint = (filePath, breakpoint) => ({
+    type: ActionTypes.TEST_UPDATE_DISABLED_BREAKPOINTS,
+    payload: { path: filePath, breakpoint },
+});
+
+export const onResolvedBreakpoint = (filePath, breakpoint) => ({
+    type: ActionTypes.TEST_UPDATE_RESOLVED_BREAKPOINT,
+    payload: { path: filePath, breakpoint },
+});
+
+export const waitUpdateBreakpoints = (value) => ({
+    type: ActionTypes.WAIT_TEST_UPDATE_BREAKPOINTS,
+    payload: { value: value },
+});
+
 export const removeBreakpoints = (path) => ({
     type: ActionTypes.TEST_REMOVE_BREAKPOINTS,
     payload: { path },
@@ -192,6 +212,11 @@ export const moveBreakpointsFromTmpFileToRealFile = (tmpFilePath, tmpfileName, r
 export const updateRunSettings = (settings) => ({
     type: ActionTypes.TEST_UPDATE_RUN_SETTINGS,
     payload: { settings },
+});
+
+export const setSeleniumPid = (seleniumPid) => ({
+    type: ActionTypes.TEST_SELENIUM_PID,
+    payload: { seleniumPid },
 });
 
 

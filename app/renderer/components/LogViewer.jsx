@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 CloudBeat Limited
+ * Copyright (C) 2015-present CloudBeat Limited
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -8,10 +8,10 @@
  */
 // @flow
 /* eslint-disable react/no-unused-state */
-import React, { PureComponent } from 'react';
+import React from 'react';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
 import { message } from 'antd';
-import difference from 'lodash.difference';
+import difference from 'lodash/difference';
 import { type LogEntry } from '../types/LogEntry';
 import ScrollContainer from './ScrollContainer.jsx';
 import { AutoSizer, Grid } from 'react-virtualized';
@@ -24,9 +24,9 @@ type Props = {
     height: number
 };
 
-export default class LogViewer extends PureComponent<Props> {
+export default class LogViewer extends React.PureComponent<Props> {
     constructor(props: Props) {
-        super(props: Props);
+        super(props);
 
         this.loggerRef = React.createRef();
         this.buttonRef = React.createRef();
@@ -50,7 +50,8 @@ export default class LogViewer extends PureComponent<Props> {
   
         if(logs && logs.map){
             logs.map((log) => {
-                const messageSplit = log.message.split('\n');
+                const message = log.message || 'null';
+                const messageSplit = message.split('\n');
 
                 if(messageSplit && messageSplit.map){
                     messageSplit.map((item, i) => {
@@ -86,11 +87,12 @@ export default class LogViewer extends PureComponent<Props> {
     }
 
     UNSAFE_componentWillReceiveProps(nextProps) {
-        const diff = difference(nextProps.logs, this.props.logs);   
+        const diff = difference(nextProps.logs, this.props.logs); 
+        const lengthDiff = !(nextProps.logs.length === this.props.logs.length);
         let newState = {};
         let maxWidth = 1;
 
-        if ((this.props.category !== nextProps.category) || diff && diff.length) {
+        if ((this.props.category !== nextProps.category) || (diff && diff.length) || lengthDiff) {
             newState = {
                 refreshScroll: !this.state.refreshScroll,
                 keyKeys: [],
@@ -101,7 +103,7 @@ export default class LogViewer extends PureComponent<Props> {
             };
         }
 
-        if(diff && diff.length){
+        if(lengthDiff || (diff && diff.length)){
 
             const { logs } = nextProps;
 
@@ -109,7 +111,8 @@ export default class LogViewer extends PureComponent<Props> {
   
             if(logs && logs.map){
                 logs.map((log) => {
-                    const messageSplit = log.message.split('\n');
+                    const message = log.message || 'null';
+                    const messageSplit = message.split('\n');
   
                     if(messageSplit && messageSplit.map){
                         messageSplit.map((item, i) => {
@@ -140,7 +143,6 @@ export default class LogViewer extends PureComponent<Props> {
             }
       
         }
-
         this.setState(
             newState
         );

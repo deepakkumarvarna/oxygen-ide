@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /*
  * Copyright (C) 2015-2018 CloudBeat Limited
  *
@@ -10,7 +11,7 @@ import { message } from 'antd';
 
 import * as ActionTypes from './types';
 import * as Const from '../../../const';
-import { failure } from '../../helpers/redux';
+import { success, failure } from '../../helpers/redux';
 
 const defaultState = {
     isRunning: false,         // indicates if a test is currently running
@@ -18,17 +19,21 @@ const defaultState = {
     isSeleniumReady: false,   // indicates if built-in Selenium server has been successfully started
     isAppiumReady: false,     // indicates if built-in Appium server has been successfully started
     breakpoints: {},          // holds all user-defined breakpoints per file, shall include file name and line number
+    disabledBreakpoints: {},
+    resolvedBreakpoints: {},
+    waitUpdateBreakpoints: false,
     mainFile: null,           // main test (script) file to be executed 
     runtimeSettings: {
         testMode: 'web',
         testTarget: 'chrome',
-        testProvider: null,
+        testProvider: 'Local',
         stepDelay: 0,
         reopenSession: false,   // indicates if Selenium session must be re-opened for each iteration
         seleniumPort: null,     // holds Selenium server port number
         iterations: 1,
         paramFilePath: null,
         paramMode: 'sequential',
+        seleniumPid: null
     },
     browsers: [
         {
@@ -61,7 +66,7 @@ if (process.platform === 'darwin') {
 
 export default (state = defaultState, action) => {
     const payload = action.payload || {};
-    const { value, settings, device, breakpoints, path, error, cache, fileName, variables } = payload;
+    const { value, settings, device, breakpoints, breakpoint, path, error, cache, fileName, variables, seleniumPid } = payload;
     let _newDevices = [];
     let _newBreakpoints = {};
 
@@ -72,6 +77,8 @@ export default (state = defaultState, action) => {
             ...state,
             isRunning: true,
             isPaused: false,
+            disabledBreakpoints: {},
+            resolvedBreakpoints: {},
         };
 
     // TEST_START_FAILURE
@@ -116,6 +123,20 @@ export default (state = defaultState, action) => {
     case ActionTypes.TEST_STOP:
         return {
             ...state,
+            stopingTest: true,
+        };
+    case success(ActionTypes.TEST_STOP):
+        return {
+            ...state,
+            stopingTest: false,
+            isRunning: false,
+            isPaused: false,
+            variables: null
+    };
+    case failure(ActionTypes.TEST_STOP):
+        return {
+            ...state,
+            stopingTest: false,
             isRunning: false,
             isPaused: false,
             variables: null
@@ -150,31 +171,25 @@ export default (state = defaultState, action) => {
             return state;
         }
 
-        let newTestProvider = state.runtimeSettings.testProvider;
+        // let newTestProvider = state.runtimeSettings.testProvider;
 
-        // determine new testTarget value, depending on the selected test mode
+        // // determine new testTarget value, depending on the selected test mode
         let newTestTarget = null;
         if (value === 'web') {
             newTestTarget = state.browsers.length > 0 ? state.browsers[0].id : null;
-        }
-        else if (value === 'mob') {
+        } else if (value === 'mob') {
             newTestTarget = state.devices.length > 0 ? state.devices[0].id : null;
-
-            if(newTestTarget === null){
-                message.error('No connected devices or emulators found. Mobile device needs to be connected to the computer in order to run mobile tests.');
-            }
         }
         else if (value === 'resp') {
-            newTestProvider = '';
             newTestTarget = state.emulators.length > 0 ? state.emulators[0] : null;
         }
+
         return {
             ...state,
             runtimeSettings: {
                 ...state.runtimeSettings,
                 testMode: value,
                 testTarget: newTestTarget,
-                testProvider: newTestProvider
             },
         };
 
@@ -257,7 +272,54 @@ export default (state = defaultState, action) => {
                 },
             };
         }
-    
+
+    case ActionTypes.TEST_UPDATE_DISABLED_BREAKPOINTS:
+
+            let previousDisabledBreakpoints = [];
+            if(
+                path &&
+                state.disabledBreakpoints &&
+                state.disabledBreakpoints[path] &&
+                Array.isArray(state.disabledBreakpoints[path]) 
+            ){
+                previousDisabledBreakpoints = state.disabledBreakpoints[path];
+            }
+
+            return {
+                ...state,
+                disabledBreakpoints: {
+                    ...state.disabledBreakpoints,
+                    [path]: [...previousDisabledBreakpoints, breakpoint],
+                },
+            };
+
+    case ActionTypes.TEST_UPDATE_RESOLVED_BREAKPOINT:
+        let previousResolvedBreakpoints = [];
+        if(
+            path &&
+            state.resolvedBreakpoints &&
+            state.resolvedBreakpoints[path] &&
+            Array.isArray(state.resolvedBreakpoints[path]) 
+        ){
+            previousResolvedBreakpoints = state.resolvedBreakpoints[path];
+        }
+
+        return {
+            ...state,
+            resolvedBreakpoints: {
+                ...state.resolvedBreakpoints,
+                [path]: [...previousResolvedBreakpoints, breakpoint],
+            },
+        };
+        
+    // TEST_UPDATE_BREAKPOINTS
+    case ActionTypes.WAIT_TEST_UPDATE_BREAKPOINTS: {
+        return {
+            ...state,
+            waitUpdateBreakpoints: value
+        };
+    }
+
     // TEST_MOVE_BREAKPOINTS_FROM_TMP_FILE_TO_REAL_FILE
     case ActionTypes.TEST_MOVE_BREAKPOINTS_FROM_TMP_FILE_TO_REAL_FILE:{
         const { tmpFilePath, tmpfileName, realFilePath } = payload;
@@ -305,7 +367,17 @@ export default (state = defaultState, action) => {
             ...state,
             runtimeSettings: {
                 ...state.runtimeSettings,
-                testProvider: value
+                testProvider: value,
+                testTarget: null,
+                testMode: null,
+            },
+        };
+    case ActionTypes.TEST_SELENIUM_PID:
+        return {
+            ...state,
+            runtimeSettings: {
+                ...state.runtimeSettings,
+                seleniumPid: seleniumPid,
             },
         };
 

@@ -26,6 +26,20 @@
   top: 3px;
 }
 
+.breakpointStyle.halfOpacity {
+  opacity: 0.5;
+}
+
+.breakpointStyle.hollowCircle {
+  background: white;
+  border: 1.25px solid #e06331
+}
+
+.breakpointStyle.resolwedCircle {
+  background: white;
+  border: 4px double #e06331;
+}
+
 $base: 12;
 $r: 1;
 
@@ -155,6 +169,10 @@ $b: 0.25;
       padding-left: 0 !important;
     }
   }
+}
+
+.ant-modal .ant-tabs {
+  margin-top: -15px !important;
 }
 
 .ant-modal .ant-form-item {

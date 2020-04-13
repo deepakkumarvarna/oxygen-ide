@@ -37,6 +37,7 @@ window.addEventListener(
         }
 
         if (msg.type === 'CONTEXT_MENU') {
+            e.stopPropagation();
             var port = chrome.runtime.connect();
 
             var handler = (msg) => {
@@ -51,12 +52,16 @@ window.addEventListener(
             port.onMessage.removeListener(handler);
             port.onMessage.addListener(handler);
         } else if (msg.cmd === 'RECORDER_LASTWIN') {
+            e.stopPropagation();
             chrome.runtime.sendMessage(msg);
         } else if (msg.cmd === 'RECORDER_WINDOW_GROUP_ADD') {
+            e.stopPropagation();
             chrome.runtime.sendMessage(msg);
         } else if (msg.cmd === 'RECORDER_COMMAND') {
+            e.stopPropagation();
             chrome.runtime.sendMessage(msg);
         } else if (msg.cmd === 'RECORDER_LASTWIN_UPDATE') {
+            e.stopPropagation();
             /*
                 1. JS posts RECORDER_LASTWIN_UPDATE to Content
                 2. Content relays the message to Background
@@ -107,3 +112,8 @@ function enableLogging(debuggingEnabled) {
         };`;
     document.body.appendChild(s);
 })();
+
+if (window.parent != window) {  // are we a frame?
+    window.parent.postMessage(JSON.stringify({type: 'FRAME_IS_READY'}), '*');
+    window.parent.postMessage(JSON.stringify({type: 'WINDOW_GROUP', data: window.__hash}), '*');
+}
