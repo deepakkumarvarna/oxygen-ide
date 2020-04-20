@@ -1,5 +1,7 @@
 import React from 'react';
-import { Form, Input, Switch, Checkbox } from 'antd';
+import { Form, Input, Switch, Checkbox, Select } from 'antd';
+import electron from 'electron';
+const { Option } = Select;
 
 const DEFAULT_STATE = {
     providers: {},
@@ -40,7 +42,7 @@ class CloudProvidersSettings extends React.PureComponent<Props> {
             }
         });
     }
-  
+
     onChangeSauceLabsUsername(value) {
         const { providers = {} } = this.state || {};
         const { sauceLabs = {} } = providers;
@@ -50,6 +52,62 @@ class CloudProvidersSettings extends React.PureComponent<Props> {
                 sauceLabs: {
                     ...sauceLabs,
                     username: value,
+                }
+            }
+        });
+    }
+
+    onChangeTestObjectApiKey(value) {
+        const { providers = {} } = this.state || {};
+        const { testObject = {} } = providers;
+        this.setState({
+            providers: {
+                ...this.state.providers,
+                testObject: {
+                    ...testObject,
+                    testobject_api_key: value,
+                }
+            }
+        });
+    }
+  
+    onChangeSauceLabsRegion(value) {
+        const { providers = {} } = this.state || {};
+        const { testObject = {} } = providers;
+        this.setState({
+            providers: {
+                ...this.state.providers,
+                testObject: {
+                    ...testObject,
+                    region: value,
+                }
+            }
+        });
+    }
+    
+    onChangeTestObjectHost(value) {
+        const { providers = {} } = this.state || {};
+        const { testObject = {} } = providers;
+        this.setState({
+            providers: {
+                ...this.state.providers,
+                testObject: {
+                    ...testObject,
+                    host: value,
+                }
+            }
+        });
+    }
+
+    onChangesTestObjectUsername(value) {
+        const { providers = {} } = this.state || {};
+        const { testObject = {} } = providers;
+        this.setState({
+            providers: {
+                ...this.state.providers,
+                testObject: {
+                    ...testObject,
+                    testObjectUsername: value,
                 }
             }
         });
@@ -105,6 +163,20 @@ class CloudProvidersSettings extends React.PureComponent<Props> {
                 ...this.state.providers,
                 sauceLabs: {
                     ...sauceLabs,
+                    inUse: value,
+                }
+            }
+        });
+    }
+
+    onUseTestObjectChange(value) {
+        const { providers = {} } = this.state || {};
+        const { testObject = {} } = providers;
+        this.setState({
+            providers: {
+                ...this.state.providers,
+                testObject: {
+                    ...testObject,
                     inUse: value,
                 }
             }
@@ -326,6 +398,19 @@ class CloudProvidersSettings extends React.PureComponent<Props> {
         
         return validateFieldsResults;
     }
+
+    processLink = (event) => {
+        if(event){
+            event.preventDefault();
+
+            if (event.target instanceof HTMLAnchorElement) {
+                const url = event.target.getAttribute('href');
+                electron.shell.openExternal(url);
+            } else {
+                console.log('bad event.target', event.target);
+            }
+        }
+    }
     
     render(){
         
@@ -335,6 +420,7 @@ class CloudProvidersSettings extends React.PureComponent<Props> {
 
         const {
             sauceLabs = {},
+            testObject = {},
             testingBot = {},
             lambdaTest = {}
         } = providers;
@@ -342,44 +428,89 @@ class CloudProvidersSettings extends React.PureComponent<Props> {
         return(
             <Form>
                 {/* //////////// SAUCE LABS //////////// */}
-                <Form.Item label="Sauce Labs" {...formItemLayout} extra="Use Sauce Labs to run your tests in cloud." >
+                <Form.Item label="Sauce Labs" {...formItemLayout} extra="Use Sauce Labs to run your selenium in cloud." >
                     <Switch onChange={ ::this.onUseSauceLabsChange } checked={ sauceLabs.inUse } />
                 </Form.Item>
                 { sauceLabs && sauceLabs.inUse &&
-            <div className="cloud-providers-form-wrap cloud-providers-form-wrap-margin-bottom">
-                <Form.Item label="Sauce Labs Settings" style={ {fontWeight: 'bold'} } {...formItemLayout}/>
-                <Form.Item label="Remote Hub URL" {...formItemLayout} >
-                    <Input
-                        value={ sauceLabs.url }
-                        onChange={ (e) => ::this.onChangeSauceLabsUrl(e.target.value) }
-                    />
-                </Form.Item>
-                <Form.Item label="Username" {...formItemLayout} >
-                    <Input
-                        value={ sauceLabs.username }
-                        onChange={ (e) => ::this.onChangeSauceLabsUsername(e.target.value) }
-                    />
-                </Form.Item>
-                <Form.Item label="Access Key" {...formItemLayout} >
-                    <Input.Password
-                        value={ sauceLabs.accessKey }
-                        onChange={ (e) => ::this.onChangeSauceLabsAccessKey(e.target.value) }
-                    />
-                </Form.Item>
-                <Form.Item label="Extended Debugging" {...formItemLayout} >
-                    <Checkbox
-                        checked={ sauceLabs.extendedDebugging || false }
-                        onChange={ (e) => ::this.onChangeSauceLabsExtendedDebugging(e.target.checked) }
-                    />
-                </Form.Item>
-                <Form.Item label="Capture Performance" {...formItemLayout} >
-                    <Checkbox
-                        checked={ sauceLabs.capturePerformance || false }
-                        onChange={ (e) => ::this.onChangeSauceLabsCapturePerformance(e.target.checked) }
-                    />                  
-                </Form.Item>
-            </div>
+                    <div className="cloud-providers-form-wrap cloud-providers-form-wrap-margin-bottom">
+                        <Form.Item label="Sauce Labs Settings" style={ {fontWeight: 'bold'} } {...formItemLayout}/>
+                        <Form.Item label="Remote Hub URL" {...formItemLayout} >
+                            <Input
+                                value={ sauceLabs.url }
+                                onChange={ (e) => ::this.onChangeSauceLabsUrl(e.target.value) }
+                            />
+                            <p style={{ lineHeight: '22px', paddingTop: '4px', paddingBottom: '4px' }}>
+                            Type in the Hub URL that was defined in your Sauce Labs account.
+                            If you are not sure what URL to use - see <a href="https://wiki.saucelabs.com/display/DOCS/Data+Center+Endpoints#DataCenterEndpoints-Endpoints" onClick={this.processLink}>here</a>.
+                            </p>
+                        </Form.Item>
+                        <Form.Item label="Username" {...formItemLayout} >
+                            <Input
+                                value={ sauceLabs.username }
+                                onChange={ (e) => ::this.onChangeSauceLabsUsername(e.target.value) }
+                            />
+                        </Form.Item>
+                        <Form.Item label="Access Key" {...formItemLayout} >
+                            <Input.Password
+                                value={ sauceLabs.accessKey }
+                                onChange={ (e) => ::this.onChangeSauceLabsAccessKey(e.target.value) }
+                            />
+                        </Form.Item>
+                        <Form.Item label="Extended Debugging" {...formItemLayout} >
+                            <Checkbox
+                                checked={ sauceLabs.extendedDebugging || false }
+                                onChange={ (e) => ::this.onChangeSauceLabsExtendedDebugging(e.target.checked) }
+                            />
+                        </Form.Item>
+                        <Form.Item label="Capture Performance" {...formItemLayout} >
+                            <Checkbox
+                                checked={ sauceLabs.capturePerformance || false }
+                                onChange={ (e) => ::this.onChangeSauceLabsCapturePerformance(e.target.checked) }
+                            />
+                        </Form.Item>
+                    </div>
                 }
+
+                {/* //////////// TestObject  //////////// */}
+                <Form.Item label="TestObject" {...formItemLayout} extra="Use TestObject to run your appium in cloud." >
+                    <Switch onChange={ ::this.onUseTestObjectChange } checked={ testObject.inUse } />
+                </Form.Item>
+                { testObject && testObject.inUse &&
+                    <div className="cloud-providers-form-wrap cloud-providers-form-wrap-margin-bottom">
+                        <Form.Item label="Testobject Settings" style={ {fontWeight: 'bold'} } {...formItemLayout}/>
+                        <Form.Item label="Remote Hub URL" {...formItemLayout} >
+                            <Input
+                                value={ testObject.host }
+                                onChange={ (e) => ::this.onChangeTestObjectHost(e.target.value) }
+                            />
+                        </Form.Item>
+                        <Form.Item label="Username" {...formItemLayout} >
+                            <Input
+                                value={ testObject.testObjectUsername }
+                                onChange={ (e) => ::this.onChangesTestObjectUsername(e.target.value) }
+                            />
+                        </Form.Item>
+
+
+                        <Form.Item label="Api key" {...formItemLayout} >
+                            <Input
+                                value={ testObject.testobject_api_key }
+                                onChange={ (e) => ::this.onChangeTestObjectApiKey(e.target.value) }
+                            />
+                        </Form.Item>
+
+
+                        <Form.Item label="Region" {...formItemLayout}>
+                            <Select value={testObject.region} onChange={(value) => ::this.onChangeSauceLabsRegion(value)}>
+                                <Option value="usWest1">US West 1</Option>
+                                <Option value="eu">EU Central 1</Option>
+                                <Option value="headlessUsEast">Headless US-East</Option>
+                            </Select>
+                        </Form.Item>
+                    </div>
+                }
+
+
                 {/* //////////// LAMBDA TEST //////////// */}
                 <Form.Item label="LambdaTest" {...formItemLayout} extra="Use LambdaTest to run your tests in cloud." >
                     <Switch onChange={ ::this.onUseLambdaTestChange } checked={ lambdaTest.inUse } />
